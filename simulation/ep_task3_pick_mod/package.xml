@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd"
+            schematypens="http://relaxng.org/ns/structure/1.0"?>
+<package format="3">
+  <name>ep_task3_pick</name>
+  <version>1.1.0</version>
+  <description>
+    Task3: RoboMaster EP 严格按 Grid 1 → 6 的顺序, 由 TopCamera 视觉
+    判别每个网格 "空 / 方块 / 圆柱", 再调用该网格已经调好的固定路线
+    抓取并投放. 视觉不参与任何路径规划.
+  </description>
+  <maintainer email="yuri@example.com">yuri</maintainer>
+  <license>MIT</license>
+
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>action_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>std_srvs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>vision_msgs</exec_depend>
+  <exec_depend>robomaster_msgs</exec_depend>
+  <exec_depend>robomaster_ros</exec_depend>
+  <exec_depend>python3-opencv</exec_depend>
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
