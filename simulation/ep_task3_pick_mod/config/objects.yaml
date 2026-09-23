@@ -1,0 +1,135 @@
+ep_task3_pick:
+  ros__parameters:
+    # =================================================================
+    # 运动参数 —— 和你现在调好的完全一样, 一个都没动
+    # =================================================================
+    chassis_forward_x: 0.065
+    drop_forward_x: 0.0
+
+    arm_base_offset: 0.11
+    arm_x_retract: 0.07
+    drop_arm_x: 0.12
+
+    safe_z: 0.15
+    pick_z: 0.08
+    place_z: 0.10
+
+    # 类别只决定投到哪个料盒, 就这两个数
+    drop_y_cube: -0.35     # 方块料盒 (苹果)
+    drop_y_cyl: 0.35       # 圆柱料盒 (瓶子)
+
+    zero_dwell: 0.5
+    odom_report: true
+    odom_correct: false
+    odom_correct_tol: 0.015
+    odom_correct_max: 0.15
+    odom_y_sign: 1.0
+    yaw_warn_deg: 5.0
+
+    y_sign: -1.0
+    x_sign: 1.0
+
+    move_linear_speed: 0.3
+    action_timeout: 15.0
+    action_cooldown: 0.4
+    gripper_cooldown: 1.0
+    gripper_power: 0.5
+    server_wait: 20.0
+    
+    drop_y_cube: -0.5
+    drop_y_cyl: 0.5
+    drop_step_cube: 0.08     
+    drop_step_cyl: 0.08 
+
+    arm_x_min: 0.05
+    arm_x_max: 0.22
+
+    # =================================================================
+    # 六个网格的固定路线
+    #
+    # 严格按 Grid 1 → 2 → 3 → 4 → 5 → 6 的顺序检查和执行.
+    # 这三个数组就是"已经调好的固定路线", 视觉不会改动其中任何一个数.
+    #
+    #   Grid 1  近排左  世界 (0.28, -0.12)
+    #   Grid 2  近排中  世界 (0.28,  0.00)
+    #   Grid 3  近排右  世界 (0.28, +0.12)
+    #   Grid 4  远排左  世界 (0.38, -0.12)
+    #   Grid 5  远排中  世界 (0.38,  0.00)
+    #   Grid 6  远排右  世界 (0.38, +0.12)
+    #
+    #   arm_x = 世界X - arm_base_offset(0.09) - chassis_forward_x(0.08)
+    #   近排 0.28 → 0.11      远排 0.38 → 0.21
+    # =================================================================
+    grid_ids:       [1,     2,     3,     4,     5,     6]
+    grid_car_y:     [-0.12, 0.00,  0.12,  -0.12, 0.00,  0.12]
+    grid_arm_x:     [0.11,  0.11,  0.11,  0.21,  0.21,  0.21]
+    grid_forward_x: [0.08,  0.08,  0.08,  0.08,  0.08,  0.08]
+
+    # =================================================================
+    # 视觉
+    # =================================================================
+    use_vision: true
+    vision_topic: "/vision/grid_state"
+    vision_refresh_service: "/vision/refresh"
+    vision_wait: 20.0            # 启动时等 vision_node 上线的时间
+    vision_timeout: 6.0          # 每个网格最多等多久拿结果
+    vision_require_stable: true  # 只接受投票稳定的结果
+    vision_min_score: 0.0        # 置信度低于它就当成空 (yolo 建议 0.3)
+    vision_required: false       # true = 拿不到视觉就直接报错停机
+    vision_settle: 0.6           # 到网格前静止一下再判, 避免抖动
+
+    # =================================================================
+    # 随机布局真值校验 (配合 scene_randomizer)
+    # =================================================================
+    prescan: true                # 开局一次性判完六格, 空格零动作
+    verify_vision: true
+    ground_truth_file: "/tmp/ep_task3_ground_truth.json"
+    truth_max_age: 900.0         # 真值文件超过这个秒数就当过期, 不校验
+
+    # =================================================================
+    # 状态机 (新增)
+    # =================================================================
+    # 留空 = 自动去 package share 找 config/state_machine.yaml
+    # 显式设为 "none" / "disabled" = 强制走旧流程 (完全等价于旧版本)
+    state_machine_file: ""
+    # 三份报告的输出目录 (yaml 里的 reports.dir 会覆盖它)
+    report_dir: "/tmp/ep_task3_reports"
+
+    # =================================================================
+    # 静态物体表 —— 仅在 use_vision=false 或视觉挂了时作为兜底
+    # (顺序: 先近排 y 从小到大, 再远排 y 从小到大, 即 Grid 1..6)
+    # =================================================================
+    obj_names:
+      - "Cube_2"       # Grid 1
+      - "Cylinder_3"   # Grid 2
+      - "Cylinder_1"   # Grid 3
+      - "Cube_3"       # Grid 4
+      - "Cube_1"       # Grid 5
+      - "Cylinder_2"   # Grid 6
+
+    obj_x:
+      - 0.28
+      - 0.28
+      - 0.28
+      - 0.38
+      - 0.38
+      - 0.38
+
+    obj_y:
+      - -0.12
+      - 0.00
+      - 0.12
+      - -0.12
+      - 0.00
+      - 0.12
+
+    obj_kind:
+      - "CUBE"
+      - "CYL"
+      - "CYL"
+      - "CUBE"
+      - "CUBE"
+      - "CYL"
+
+    order_names:
+      - "auto"

@@ -1,0 +1,90 @@
+# =====================================================================
+# config/vision.yaml —— TopCamera 取流 + 六网格颜色判别
+# =====================================================================
+
+top_camera_node:
+  ros__parameters:
+    host: "127.0.0.1"
+    port: 23000
+    sensor_path: "/TopCamera"
+    sensor_name_hint: "top"
+    frame_id: "top_camera_optical_frame"
+    publish_rate: 15.0
+    flip_vertical: true
+    flip_horizontal: false
+    rgb_to_bgr: true
+    handle_explicitly: false
+    publish_camera_info: true
+    reconnect_period: 3.0
+
+vision_node:
+  ros__parameters:
+    image_topic: "/top_camera/image_raw"
+
+    # 当前实验固定使用 color，不走 YOLO
+    backend: "color"
+
+    # 留 [0.0] 表示不用手工 ROI，使用 table_roi 自动均分 2x3
+    grid_rois: [0.0]
+
+    # 桌台在画面里的范围 (x0, y0, x1, y1)
+    table_roi: [0.19, 0.3, 0.8, 0.66]
+    grid_rows: 2
+    grid_cols: 3
+    grid_shrink: 0.10
+
+    # 画面行优先网格 -> Grid 1..6 的映射
+    # 当前：左上->Grid4，中上->Grid5，右上->Grid6，
+    #       左下->Grid1，中下->Grid2，右下->Grid3
+    grid_index_map: [3, 4, 5, 0, 1, 2]
+
+    # -----------------------------------------------------------------
+    # YOLO 参数保留，但 backend=color 时完全不会使用
+    # -----------------------------------------------------------------
+    yolo_model: "yolov8n.pt"
+    yolo_conf: 0.25
+    yolo_iou: 0.45
+    yolo_imgsz: 640
+    yolo_device: "cpu"
+    yolo_period: 0.20
+    class_cube: ["apple", "orange", "sports ball", "donut", "cake"]
+    class_cyl: ["bottle", "vase", "cup", "wine glass"]
+
+    # -----------------------------------------------------------------
+    # color 后端 HSV
+    # -----------------------------------------------------------------
+    cube_hsv_lo: [100.0, 110.0, 60.0]
+    cube_hsv_hi: [130.0, 255.0, 255.0]
+    cyl_hsv_lo: [0.0, 110.0, 60.0]
+    cyl_hsv_hi: [10.0, 255.0, 255.0]
+    cyl_hsv_lo2: [170.0, 110.0, 60.0]
+    cyl_hsv_hi2: [180.0, 255.0, 255.0]
+    color_min_area_ratio: 0.02
+
+    # 空白判定
+    empty_check: true
+    empty_blank_ratio: 0.90
+    shape_extent_cube: 0.86
+
+    # -----------------------------------------------------------------
+    # 稳定性
+    # 连续窗口中至少 min_votes 票一致才切换稳定类别。
+    # 稳定后 bbox / score / label 锁定，不跟随每帧微小变化。
+    # -----------------------------------------------------------------
+    vote_window: 7
+    min_votes: 4
+
+    publish_annotated: true
+    annotated_scale: 1.0
+    state_rate: 5.0
+    log_period: 5.0
+
+
+grid_calib:
+  ros__parameters:
+    image_topic: "/top_camera/image_raw"
+    rows: 2
+    cols: 3
+    shrink: 0.10
+    scale: 1.5
+    output: "grid_rois.yaml"

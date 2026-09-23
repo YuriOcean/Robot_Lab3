@@ -1,0 +1,94 @@
+# =============================================================================
+# Task3 抓取节点  ——  状态机配置
+# -----------------------------------------------------------------------------
+# 只描述"怎么走"; 每个状态里干什么活由 pick_node 上的同名方法实现:
+#   sm_init / sm_prescan / sm_next_grid / sm_execute / sm_skip /
+#   sm_recover / sm_finalize / sm_fault
+# 想调整流程就改这个文件, 不用动 Python 代码.
+# =============================================================================
+
+state_machine:
+
+  # 起点
+  initial: INIT
+
+  # handler 里抛异常时默认发出的事件 (每个状态可以在自己的 transitions 里
+  # 定义 error 的下一站; 状态里覆盖 on_exception 可以走别的事件名)
+  default_exception: error
+
+  # 上限, 防止流程死循环 (6 格 * 每格最多几步 + 头尾, 80 绰绰有余)
+  max_transitions: 200
+
+  # 三份报告的落盘位置
+  reports:
+    dir: "/tmp/ep_task3_reports"
+    classification_file: "classification_results.txt"
+    exception_file:      "exception_log.txt"
+    task_log_file:       "task_log.txt"
+    also_write_json:     true
+
+  # -------------------------------------------------------------------------
+  # 状态
+  # -------------------------------------------------------------------------
+  states:
+
+    INIT:
+      description: "等 odom / Action / 视觉就绪, 归位手臂 + 张开爪"
+      handler: sm_init
+      transitions:
+        ready: PRESCAN
+        error: FAULT
+
+    PRESCAN:
+      description: "顶视相机一次性判完 6 格, 生成执行计划"
+      handler: sm_prescan
+      transitions:
+        plan_ready: NEXT_GRID
+        error:      FAULT
+
+    NEXT_GRID:
+      description: "取下一个待处理网格 (有物体 → EXECUTE, 空 → SKIP, 没了 → FINALIZE)"
+      handler: sm_next_grid
+      transitions:
+        have_target: EXECUTE
+        empty:       SKIP
+        done_all:    FINALIZE
+
+    EXECUTE:
+      description: "走该 Grid 已调好的固定路线: 对准 → 抓 → 运 → 投 → 回零"
+      handler: sm_execute
+      transitions:
+        picked: NEXT_GRID
+        error:  RECOVER          # 单格失败 -> 尝试恢复, 继续下一格
+
+    SKIP:
+      description: "空格, 零动作"
+      handler: sm_skip
+      transitions:
+        skipped: NEXT_GRID
+
+    RECOVER:
+      description: "松爪 + 手臂归位 + 底盘回零; 累计失败过多 -> FAULT"
+      handler: sm_recover
+      transitions:
+        recovered: NEXT_GRID
+        fatal:     FAULT
+        error:     FAULT         # RECOVER 自己再抛异常 -> 直接 FAULT
+
+    FINALIZE:
+      description: "回零 + 手臂归位 + 打印真值校验报告 + 落盘三份文件"
+      handler: sm_finalize
+      transitions:
+        done:  DONE
+        error: FAULT
+
+    FAULT:
+      description: "任务终止: 停车, 落盘所有报告"
+      handler: sm_fault
+      transitions:
+        shutdown: DONE
+        error:    DONE
+
+    DONE:
+      description: "结束"
+      terminal: true
