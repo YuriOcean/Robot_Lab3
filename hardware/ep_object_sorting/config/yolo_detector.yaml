@@ -1,0 +1,14 @@
+yolo_detector:
+  ros__parameters:
+    input_topic: /camera/image_color
+    detections_topic: /detections
+    annotated_topic: /yolo/annotated_image
+    target_classes:
+      - bottle
+      - apple
+    confidence_threshold: 0.25
+    image_size: 640
+    device: cpu
+    max_inference_hz: 5.0
+    publish_annotated_image: true
+

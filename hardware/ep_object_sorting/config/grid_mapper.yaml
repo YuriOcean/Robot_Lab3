@@ -1,0 +1,30 @@
+grid_mapper:
+  ros__parameters:
+    input_image_topic: /camera/image_color
+    input_detection_topic: /detections
+    grid_detection_topic: /grid_detections
+    grid_state_topic: /grid_states
+    debug_image_topic: /grid/debug_image
+
+    rows: 2
+    columns: 3
+    grid_ids:
+      - G1
+      - G2
+      - G3
+      - G4
+      - G5
+      - G6
+
+    # Replace these four values after viewing /grid/debug_image.
+    # They describe the outer rectangle containing all six grid cells.
+    roi_x_min: 0
+    roi_y_min: 0
+    roi_x_max: 640
+    roi_y_max: 360
+
+    minimum_confidence: 0.25
+    stability_frames: 3
+    force_g5_bottle: true
+    forced_g5_confidence: 1.0
+
